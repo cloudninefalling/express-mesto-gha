@@ -1,4 +1,5 @@
 const Card = require('../models/card');
+const { Status } = require('../constants');
 
 // prettier-ignore
 module.exports.createCard = (req, res) => {
@@ -7,8 +8,8 @@ module.exports.createCard = (req, res) => {
     .then((card) => res.send({ data: card }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(400).send({ message: 'Incorrect request body. Body must contain: name, link' });
-      } else res.status(500).send({ message: 'Server-side error' });
+        res.status(Status.BAD_REQUEST).send({ message: 'Incorrect request body. Body must contain: name, link' });
+      } else res.status(Status.SERVER_ERROR).send({ message: 'Server-side error' });
     });
 };
 
@@ -16,7 +17,7 @@ module.exports.createCard = (req, res) => {
 module.exports.getCards = (req, res) => {
   Card.find({})
     .then((cards) => res.send({ cards }))
-    .catch(() => res.status(500).send({ message: 'Server-side error' }));
+    .catch(() => res.status(Status.SERVER_ERROR).send({ message: 'Server-side error' }));
 };
 
 // prettier-ignore
@@ -24,7 +25,7 @@ module.exports.deleteCardById = (req, res) => {
   Card.findByIdAndDelete(req.params.cardId)
     .then((card) => {
       if (!card) {
-        res.status(404).send({ message: 'Card not found' });
+        res.status(Status.NOT_FOUND).send({ message: 'Card not found' });
       } else {
         res.send({
           _id: card._id,
@@ -38,8 +39,8 @@ module.exports.deleteCardById = (req, res) => {
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(400).send({ message: 'Invalid ID' });
-      } else res.status(500).send({ message: 'server-side error' });
+        res.status(Status.BAD_REQUEST).send({ message: 'Invalid ID' });
+      } else res.status(Status.SERVER_ERROR).send({ message: 'server-side error' });
     });
 };
 
@@ -52,7 +53,7 @@ module.exports.likeCard = (req, res) => {
   )
     .then((card) => {
       if (!card) {
-        res.status(404).send({ message: 'Card not found' });
+        res.status(Status.NOT_FOUND).send({ message: 'Card not found' });
       } else {
         res.send({
           _id: card._id,
@@ -66,8 +67,8 @@ module.exports.likeCard = (req, res) => {
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(400).send({ message: 'Invalid ID' });
-      } else res.status(500).send({ message: 'server-side error' });
+        res.status(Status.BAD_REQUEST).send({ message: 'Invalid ID' });
+      } else res.status(Status.SERVER_ERROR).send({ message: 'server-side error' });
     });
 };
 
@@ -80,7 +81,7 @@ module.exports.dislikeCard = (req, res) => {
   )
     .then((card) => {
       if (!card) {
-        res.status(404).send({ message: 'Card not found' });
+        res.status(Status.NOT_FOUND).send({ message: 'Card not found' });
       } else {
         res.send({
           _id: card._id,
@@ -94,7 +95,7 @@ module.exports.dislikeCard = (req, res) => {
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(400).send({ message: 'Invalid ID' });
-      } else res.status(500).send({ message: err });
+        res.status(Status.BAD_REQUEST).send({ message: 'Invalid ID' });
+      } else res.status(Status.SERVER_ERROR).send({ message: err });
     });
 };
