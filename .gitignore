@@ -15,6 +15,4 @@ node_modules
 .vscode
 
 # Stylers
-.editorconfig
-.eslintrc.json
 .prettierrc
