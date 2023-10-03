@@ -36,7 +36,11 @@ module.exports.deleteCardById = (req, res) => {
         });
       }
     })
-    .catch(() => res.status(500).send({ message: 'ERROR' }));
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        res.status(400).send({ message: 'Invalid ID' });
+      } else res.status(500).send({ message: 'server-side error' });
+    });
 };
 
 // prettier-ignore
@@ -63,7 +67,7 @@ module.exports.likeCard = (req, res) => {
     .catch((err) => {
       if (err.name === 'CastError') {
         res.status(400).send({ message: 'Invalid ID' });
-      } else res.status(500).send({ message: err });
+      } else res.status(500).send({ message: 'server-side error' });
     });
 };
 

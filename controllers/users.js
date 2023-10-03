@@ -15,7 +15,7 @@ module.exports.getUserById = (req, res) => {
       if (!user) {
         res.status(404).send({ message: 'User not found' });
       } else {
-        res.status(201).send({
+        res.send({
           _id: user._id,
           name: user.name,
           about: user.about,
@@ -34,7 +34,7 @@ module.exports.getUserById = (req, res) => {
 module.exports.createUser = (req, res) => {
   const { name, about, avatar } = req.body;
   User.create({ name, about, avatar })
-    .then((user) => res.status(201).send({
+    .then((user) => res.send({
       _id: user._id,
       name: user.name,
       about: user.about,
@@ -59,7 +59,7 @@ module.exports.updateUser = (req, res) => {
       if (!user) {
         res.status(404).send({ message: 'User not found' });
       } else {
-        res.status(201).send({
+        res.send({
           _id: user._id,
           name: user.name,
           about: user.about,
@@ -92,7 +92,7 @@ module.exports.updateUserAvatar = (req, res) => {
       if (!user) {
         res.status(404).send({ message: 'User not found' });
       } else {
-        res.status(201).send({
+        res.send({
           _id: user._id,
           name: user.name,
           about: user.about,
