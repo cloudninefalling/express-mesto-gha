@@ -1,56 +1,59 @@
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const User = require('../models/user');
-const { Status } = require('../constants');
+const NotFoundError = require('../errors/NotFoundError');
+const ConflictError = require('../errors/ConflictError');
+const BadRequestError = require('../errors/BadRequestError');
+
+const { NODE_ENV, JWT_SECRET } = process.env;
 
 // prettier-ignore
-module.exports.getUsers = (req, res) => {
+module.exports.getUsers = (req, res, next) => {
   User.find({})
     .then((users) => res.send({ users }))
-    .catch(() => {
-      res.status(Status.SERVER_ERROR).send({ message: 'Server-side error' });
-    });
+    .catch(next);
 };
 
 // prettier-ignore
-module.exports.getUserById = (req, res) => {
+module.exports.getCurrentUser = (req, res) => {
+  req.params.id = req.user._id;
+  module.exports.getUserById(req, res);
+};
+
+// prettier-ignore
+module.exports.getUserById = (req, res, next) => {
   User.findById(req.params.id)
     .then((user) => {
       if (!user) {
-        res.status(Status.NOT_FOUND).send({ message: 'User not found' });
+        throw new NotFoundError('User not found');
       } else {
-        res.send({
-          _id: user._id,
-          name: user.name,
-          about: user.about,
-          avatar: user.avatar,
-        });
+        res.send(user);
       }
     })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        res.status(Status.BAD_REQUEST).send({ message: 'Invalid ID' });
-      } else res.status(Status.SERVER_ERROR).send({ message: 'Server-side error' });
-    });
+    .catch(next);
 };
 
 // prettier-ignore
-module.exports.createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  User.create({ name, about, avatar })
-    .then((user) => res.send({
-      _id: user._id,
-      name: user.name,
-      about: user.about,
-      avatar: user.avatar,
-    }))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(Status.BAD_REQUEST).send({ message: 'Incorrect request body. Body must contain: name, about, avatar' });
-      } else res.status(Status.SERVER_ERROR).send({ message: 'Server-side error' });
-    });
+module.exports.createUser = (req, res, next) => {
+  const { email, password } = req.body;
+  bcrypt.hash(password, 10)
+    .then((hash) => {
+      User.create({ email, password: hash })
+        .then((user) => res.send(user))
+        .catch((err) => {
+          if (err.code === 11000) {
+            next(new ConflictError(err.message));
+          } else if (err instanceof mongoose.Error.ValidationError) {
+            next(new BadRequestError(err.message));
+          } else next(err);
+        });
+    })
+    .catch(next);
 };
 
 // prettier-ignore
-module.exports.updateUser = (req, res) => {
+module.exports.updateUser = (req, res, next) => {
   const { name, about } = req.body;
   User.findByIdAndUpdate(req.user._id, { name, about }, {
     new: true,
@@ -59,27 +62,20 @@ module.exports.updateUser = (req, res) => {
   })
     .then((user) => {
       if (!user) {
-        res.status(Status.NOT_FOUND).send({ message: 'User not found' });
+        throw new NotFoundError('User not found');
       } else {
-        res.send({
-          _id: user._id,
-          name: user.name,
-          about: user.about,
-          avatar: user.avatar,
-        });
+        res.send(user);
       }
     })
     .catch((err) => {
-      if (err.name === 'CastError') {
-        res.status(Status.BAD_REQUEST).send({ message: 'Invalid ID' });
-      } else if (err.name === 'ValidationError') {
-        res.status(Status.BAD_REQUEST).send({ message: 'Incorrect request body. Body must contain: name, about, avatar' });
-      } else res.status(Status.SERVER_ERROR).send({ message: err });
+      if (err instanceof mongoose.Error.ValidationError) {
+        next(new BadRequestError(err.message));
+      } else next(err);
     });
 };
 
 // prettier-ignore
-module.exports.updateUserAvatar = (req, res) => {
+module.exports.updateUserAvatar = (req, res, next) => {
   const { avatar } = req.body;
   User.findByIdAndUpdate(
     req.user._id,
@@ -92,21 +88,28 @@ module.exports.updateUserAvatar = (req, res) => {
   )
     .then((user) => {
       if (!user) {
-        res.status(Status.NOT_FOUND).send({ message: 'User not found' });
+        throw new NotFoundError('User not found');
       } else {
-        res.send({
-          _id: user._id,
-          name: user.name,
-          about: user.about,
-          avatar: user.avatar,
-        });
+        res.send(user);
       }
     })
     .catch((err) => {
-      if (err.name === 'CastError') {
-        res.status(Status.BAD_REQUEST).send({ message: 'Invalid ID' });
-      } else if (err.name === 'ValidationError') {
-        res.status(Status.BAD_REQUEST).send({ message: 'Incorrect request body. Body must contain: name, about, avatar' });
-      } else res.status(Status.SERVER_ERROR).send({ message: 'Server-side error' });
+      if (err instanceof mongoose.Error.ValidationError) {
+        next(new BadRequestError(err.message));
+      } else next(err);
+    });
+};
+
+// prettier-ignore
+module.exports.login = (req, res, next) => {
+  const { email, password } = req.body;
+  User.findUserByCredentials(email, password)
+    .then((user) => {
+      res.send({ token: jwt.sign({ _id: user._id }, NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret', { expiresIn: '7d' }) });
+    })
+    .catch((err) => {
+      if (err instanceof mongoose.Error.ValidationError) {
+        next(new BadRequestError(err.message));
+      } else next(err);
     });
 };

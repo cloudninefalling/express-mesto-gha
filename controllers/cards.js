@@ -1,51 +1,50 @@
 const Card = require('../models/card');
-const { Status } = require('../constants');
+const { StatusCodes: Status } = require('../errors/StatusCodes');
+const AuthError = require('../errors/AuthError');
+const NotFoundError = require('../errors/NotFoundError');
+const BadRequestError = require('../errors/BadRequestError');
 
 // prettier-ignore
-module.exports.createCard = (req, res) => {
+module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
   Card.create({ name, link, owner: req.user._id })
     .then((card) => res.send({ data: card }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(Status.BAD_REQUEST).send({ message: 'Incorrect request body. Body must contain: name, link' });
-      } else res.status(Status.SERVER_ERROR).send({ message: 'Server-side error' });
+        next(new BadRequestError(err.message));
+      } else next(err);
     });
 };
 
 // prettier-ignore
-module.exports.getCards = (req, res) => {
-  Card.find({})
+module.exports.getCards = (req, res, next) => {
+  Card.find({}).populate('owner')
     .then((cards) => res.send({ cards }))
-    .catch(() => res.status(Status.SERVER_ERROR).send({ message: 'Server-side error' }));
+    .catch(next);
 };
 
 // prettier-ignore
-module.exports.deleteCardById = (req, res) => {
-  Card.findByIdAndDelete(req.params.cardId)
+module.exports.deleteCardById = (req, res, next) => {
+  Card.findById(req.params.cardId)
     .then((card) => {
       if (!card) {
-        res.status(Status.NOT_FOUND).send({ message: 'Card not found' });
+        throw new NotFoundError('Card not found');
+      } else if (!card.owner._id.equals(req.user._id)) {
+        throw new AuthError('UserID does not match card owner');
       } else {
-        res.send({
-          _id: card._id,
-          name: card.name,
-          link: card.link,
-          owner: card.owner,
-          likes: card.likes,
-          createdAt: card.createdAt,
-        });
+        card.deleteOne()
+          .then(res.send(card));
       }
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(Status.BAD_REQUEST).send({ message: 'Invalid ID' });
-      } else res.status(Status.SERVER_ERROR).send({ message: 'server-side error' });
+        next(new NotFoundError('Card not found'));
+      } else next(err);
     });
 };
 
 // prettier-ignore
-module.exports.likeCard = (req, res) => {
+module.exports.likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $addToSet: { likes: req.user._id } },
@@ -53,27 +52,20 @@ module.exports.likeCard = (req, res) => {
   )
     .then((card) => {
       if (!card) {
-        res.status(Status.NOT_FOUND).send({ message: 'Card not found' });
+        throw new NotFoundError('Card not found');
       } else {
-        res.send({
-          _id: card._id,
-          name: card.name,
-          link: card.link,
-          owner: card.owner,
-          likes: card.likes,
-          createdAt: card.createdAt,
-        });
+        res.send(card);
       }
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(Status.BAD_REQUEST).send({ message: 'Invalid ID' });
-      } else res.status(Status.SERVER_ERROR).send({ message: 'server-side error' });
+        next(new NotFoundError('Card not found'));
+      } else next(err);
     });
 };
 
 // prettier-ignore
-module.exports.dislikeCard = (req, res) => {
+module.exports.dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $pull: { likes: req.user._id } },
@@ -95,7 +87,7 @@ module.exports.dislikeCard = (req, res) => {
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(Status.BAD_REQUEST).send({ message: 'Invalid ID' });
-      } else res.status(Status.SERVER_ERROR).send({ message: err });
+        next(new NotFoundError('Card not found'));
+      } else next(err);
     });
 };
