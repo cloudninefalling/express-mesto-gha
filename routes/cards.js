@@ -19,12 +19,12 @@ router.post(
         .max(30),
       link: Joi.string()
         .required()
-        .uri(),
+        .regex(new RegExp(linkRegex)),
     }),
   }),
   createCard,
 );
-router.get('/', getCards); // TODO: celeb
+router.get('/', getCards);
 router.delete(
   '/:cardId',
   celebrate({

@@ -1,8 +1,8 @@
 const Card = require('../models/card');
 const { StatusCodes: Status } = require('../errors/StatusCodes');
-const AuthError = require('../errors/AuthError');
 const NotFoundError = require('../errors/NotFoundError');
 const BadRequestError = require('../errors/BadRequestError');
+const ForbiddenError = require('../errors/ForbiddenError');
 
 // prettier-ignore
 module.exports.createCard = (req, res, next) => {
@@ -30,7 +30,7 @@ module.exports.deleteCardById = (req, res, next) => {
       if (!card) {
         throw new NotFoundError('Card not found');
       } else if (!card.owner._id.equals(req.user._id)) {
-        throw new AuthError('UserID does not match card owner');
+        throw new ForbiddenError('UserID does not match card owner');
       } else {
         card.deleteOne()
           .then(res.send(card));

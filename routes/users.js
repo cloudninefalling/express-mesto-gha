@@ -7,10 +7,21 @@ const {
   updateUser,
   updateUserAvatar,
 } = require('../controllers/users');
+const { linkRegex } = require('../constants/regex');
 
 router.get('/', getUsers);
 router.get('/me', getCurrentUser);
-router.get('/:id', getUserById);
+router.get(
+  '/:id',
+  celebrate({
+    params: Joi.object().keys({
+      cardId: Joi.string()
+        .alphanum()
+        .length(24),
+    }),
+  }),
+  getUserById,
+);
 router.patch(
   '/me',
   celebrate({
@@ -29,7 +40,7 @@ router.patch(
   '/me/avatar',
   celebrate({
     body: Joi.object().keys({
-      avatar: Joi.string(), // TODO: linkRegex
+      avatar: Joi.string().regex(new RegExp(linkRegex)),
     }),
   }),
   updateUserAvatar,

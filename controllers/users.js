@@ -40,7 +40,11 @@ module.exports.createUser = (req, res, next) => {
   bcrypt.hash(password, 10)
     .then((hash) => {
       User.create({ email, password: hash })
-        .then((user) => res.send(user))
+        .then((user) => {
+          const userWithoutPassword = user.toObject();
+          delete userWithoutPassword.password;
+          res.send(userWithoutPassword);
+        })
         .catch((err) => {
           if (err.code === 11000) {
             next(new ConflictError(err.message));
