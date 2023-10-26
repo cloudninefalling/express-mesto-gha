@@ -36,10 +36,12 @@ module.exports.getUserById = (req, res, next) => {
 
 // prettier-ignore
 module.exports.createUser = (req, res, next) => {
-  const { email, password } = req.body;
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
   bcrypt.hash(password, 10)
     .then((hash) => {
-      User.create({ email, password: hash })
+      User.create({ name, about, avatar, email, password: hash })
         .then((user) => {
           const userWithoutPassword = user.toObject();
           delete userWithoutPassword.password;
