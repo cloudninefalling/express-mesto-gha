@@ -11,6 +11,7 @@ const cardsRouter = require('./routes/cards');
 const auth = require('./middlewares/auth');
 const { login, createUser } = require('./controllers/users');
 const { errorHandler } = require('./middlewares/errorHandler');
+const { linkRegex } = require('./constants/regex');
 
 const { PORT = 3000 } = process.env;
 
@@ -39,6 +40,13 @@ app.post(
       password: Joi.string()
         .required()
         .min(8),
+      name: Joi.string()
+        .min(2)
+        .max(30),
+      about: Joi.string()
+        .min(2)
+        .max(30),
+      avatar: Joi.string().uri(),
     }),
   }),
   createUser,
