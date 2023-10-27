@@ -31,7 +31,11 @@ module.exports.getUserById = (req, res, next) => {
         res.send(user);
       }
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new NotFoundError('User not found'));
+      }
+    });
 };
 
 // prettier-ignore
@@ -115,9 +119,5 @@ module.exports.login = (req, res, next) => {
     .then((user) => {
       res.send({ token: jwt.sign({ _id: user._id }, NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret', { expiresIn: '7d' }) });
     })
-    .catch((err) => {
-      if (err instanceof mongoose.Error.ValidationError) {
-        next(new BadRequestError(err.message));
-      } else next(err);
-    });
+    .catch(next);
 };

@@ -12,6 +12,7 @@ const auth = require('./middlewares/auth');
 const { login, createUser } = require('./controllers/users');
 const { errorHandler } = require('./middlewares/errorHandler');
 const { linkRegex } = require('./constants/regex');
+const NotFoundError = require('./errors/NotFoundError');
 
 const { PORT = 3000 } = process.env;
 
@@ -37,9 +38,7 @@ app.post(
       email: Joi.string()
         .required()
         .email({ tlds: { allow: ['com', 'ru', 'net'] } }),
-      password: Joi.string()
-        .required()
-        .min(8),
+      password: Joi.string().required(),
       name: Joi.string()
         .min(2)
         .max(30),
@@ -58,9 +57,7 @@ app.post(
       email: Joi.string()
         .required()
         .email({ tlds: { allow: false } }),
-      password: Joi.string()
-        .required()
-        .min(8),
+      password: Joi.string().required(),
     }),
   }),
   login,
@@ -70,8 +67,8 @@ app.use(auth);
 
 app.use('/users', usersRouter);
 app.use('/cards', cardsRouter);
-app.use((req, res) => {
-  res.status(404).send({ message: 'This route does not exist' });
+app.use((req, res, next) => {
+  next(new NotFoundError('This route does not exist'));
 });
 
 app.use(errors());

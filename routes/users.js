@@ -17,7 +17,8 @@ router.get(
     params: Joi.object().keys({
       id: Joi.string()
         .alphanum()
-        .length(24),
+        .length(24)
+        .hex(),
     }),
   }),
   getUserById,

@@ -31,7 +31,8 @@ router.delete(
     params: Joi.object().keys({
       cardId: Joi.string()
         .alphanum()
-        .length(24),
+        .length(24)
+        .hex(),
     }),
   }),
   deleteCardById,
@@ -42,7 +43,8 @@ router.put(
     params: Joi.object().keys({
       cardId: Joi.string()
         .alphanum()
-        .length(24),
+        .length(24)
+        .hex(),
     }),
   }),
   likeCard,
@@ -53,7 +55,8 @@ router.delete(
     params: Joi.object().keys({
       cardId: Joi.string()
         .alphanum()
-        .length(24),
+        .length(24)
+        .hex(),
     }),
   }),
   dislikeCard,
