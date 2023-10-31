@@ -13,6 +13,7 @@ const { login, createUser } = require('./controllers/users');
 const { errorHandler } = require('./middlewares/errorHandler');
 const { linkRegex } = require('./constants/regex');
 const NotFoundError = require('./errors/NotFoundError');
+const { requestLogger, errorLogger } = require('./middlewares/logger');
 
 const { PORT = 3000 } = process.env;
 
@@ -30,6 +31,8 @@ app.use(limiter);
 mongoose.connect('mongodb://127.0.0.1:27017/mestodb');
 
 app.use(express.json());
+
+app.use(requestLogger);
 
 app.post(
   '/signup',
@@ -71,6 +74,7 @@ app.use((req, res, next) => {
   next(new NotFoundError('This route does not exist'));
 });
 
+app.use(errorLogger);
 app.use(errors());
 app.use(errorHandler);
 
